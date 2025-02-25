@@ -1,139 +1,192 @@
 /**
  * ================================================
- * Garden Gnomes
+ * Task 2 - Gnome Fight Club
  *
- *    /\
- *   ('')
- * __{__}__   /\
- *    #1  |  (oo)
- *        |__{__}__   /\
- *            #2  |  (xx)
- *                |__{__}__
- *                    #3  |
+ * The gnomes have started a fight club!
  *
- * Gnomes are placed on some steps in the garden.
- * The top step is #1, the lowest step is #10
- * - Only one gnome can be on a step at a time
- * - Gnomes can be shifted to different steps,
- *   but only if they are unoccupied
- * - Gnomes can be moved up and down the steps,
- *   but not above the top step (1), nor below the
- *   lowest (10)
- * - If Gnomes are moving up/down, and the target
- *   step is occupied, they take the step before
+ *    /\        /\
+ *   ('')  VS  (oo)
+ * __{__}______{__}__
+ *
+ * - Gnomes have a strength value from 1-10
+ * - Gnomes have a health level from 0-100
+ * - Gnomes can train to increase strength
+ * - When gnomes fight, they both lose health based
+ *   on the strength of the opponent
+ * - Gnomes die when health is zero
  * ================================================
  */
 
 
 fun main() {
-    println("Gnomes")
+    println("Gnome Fight Club")
     println("------------------------")
 
-    // Creating gnomes
+    // Instantiate gnomes
 
-    val jim = Gnome("Jim", 1)
-    val sam = Gnome("Sam", 5)
-    val amy = Gnome("Amy", 9)
+    val jim = Gnome("Jim", 3)
+    val sam = Gnome("Sam", 3)
+    val amy = Gnome("Amy", 1)
 
-    val gnomes = mutableListOf<Gnome>()
-    gnomes.add(jim)
-    gnomes.add(sam)
-    gnomes.add(amy)
+    println("------------------------")
 
-    // Showing gnome info
-
-    for (gnome in gnomes) {
-        println(gnome.info())
-    }
-
-    check(jim.info() == "Jim is on step 1")
-    check(sam.info() == "Sam is on step 5")
-    check(amy.info() == "Amy is on step 9")
-
-    // Placing gnomes on new steps
-
-    jim.gotoStep(2, gnomes) // Jump to step 2. Should be fine
     println(jim.info())
-    check(jim.step == 2)
-
-    jim.gotoStep(5, gnomes) // Jump to step 5. But it is occupied so should not move
-    println(jim.info())
-    check(jim.step == 2)
-
-    // Shifting gnomes
-
-    sam.moveUp(4, gnomes)   // Move up to an empty step. Should be fine
     println(sam.info())
-    check(sam.step == 1)
-
-    sam.moveUp(1, gnomes)   // Try to move up beyond top step. Should not be possible
-    println(sam.info())
-    check(sam.step == 1)
-
-    amy.moveDown(5, gnomes) // Try to move down beyond bottom. Should stop at bottom
     println(amy.info())
-    check(amy.step == 10)
 
-    jim.moveDown(8, gnomes) // Try to move right to bottom. Occupied, so should stop before
-    println(jim.info())
-    check(jim.step == 9)
+    check(jim.info() == "Jim: strength 3, health 100")
+    check(sam.info() == "Sam: strength 3, health 100")
+    check(amy.info() == "Amy: strength 1, health 100")
 
-    jim.moveUp(8, gnomes)   // Try to move right to top. Occupied, so should stop before
+    check(jim.alive())
+    check(sam.alive())
+    check(amy.alive())
+
+    // Training time!
+
+    println("------------------------")
+
+    jim.train(2)        // Should increase strength by 1
     println(jim.info())
-    check(jim.step == 2)
+    check(jim.strength == 4)
+
+    sam.train(7)        // Should increase strength by 3
+    println(sam.info())
+    check(sam.strength == 6)
+
+    amy.train(24)       // Should increase strength to max
+    println(amy.info())
+    check(amy.strength == 10)
+
+    // Fight time!
+
+    println("------------------------")
+
+    // Jim vs Amy - Round 1
+    jim.fight(amy)
+
+    println(jim.info())
+    println(amy.info())
+
+    check(jim.health == 50)     // Lost 5*10 health
+    check(amy.health == 80)     // Lost 5*4 health
+    check(jim.alive())          // Both still alive
+    check(amy.alive())
+
+    println("------------------------")
+
+    // Jim vs Amy - Round 2
+    jim.fight(amy)
+
+    println(jim.info())
+    println(amy.info())
+
+    check(jim.health == 0)       // Lost 5*10 health
+    check(amy.health == 60)      // Lost 5*4 health
+    check(jim.alive() == false)  // Died!
+    check(amy.alive())           // Alive still
+
+    println("------------------------")
+
+    // Jim vs Amy - Round 3 (but Jim is dead!)
+    amy.fight(jim)
+
+    println(jim.info())
+    println(amy.info())
+
+    check(jim.health == 0)      // Already at zero!
+    check(amy.health == 60)     // Lost no health as dead can't fight back!
+
+    println("------------------------")
+
+    // Sam vs Amy - Round 1
+    sam.fight(amy)
+
+    println(sam.info())
+    println(amy.info())
+
+    check(sam.health == 50)     // Lost 5*10 health
+    check(amy.health == 30)     // Lost 5*6 health
+    check(sam.alive())          // Both alive still
+    check(amy.alive())
+
+    println("------------------------")
+
+    // Sam vs Amy - Round 2 - The end!
+    sam.fight(amy)
+
+    println(sam.info())
+    println(amy.info())
+
+    check(sam.health == 0)       // Lost 5*10 health
+    check(amy.health == 0)       // Lost 5*6 health
+    check(sam.alive() == false)  // Killed each other!
+    check(amy.alive() == false)
 }
 
 
-/**
- * Steps class
- */
-class Steps() {
-    val steps = Array<Gnome?>(10) { null }
-
-    fun placeGnomeOnStep(step: Int, gnome: Gnome) {
-
-    }
-}
 /**
  * Gnome class
  */
-class Gnome(val name: String, var step: Int) {
+class Gnome(val name: String, var strength: Int) {
+    var health = 100
+
     init {
         println("Creating a gnome... $name")
     }
 
     /**
-     * Show info about the gnome in the form
-     * NAME is on step N
+     * Show info about the gnome, including its
+     * health and stength levels in the form:
+     *   NAME: strength N, health NNN
+     * But if dead (health is zero):
+     *   NAME: dead!
      */
     fun info(): String {
-        return ""
+        return if (alive()) "$name: strength $strength, health $health" else "$name: dead!"
     }
 
     /**
-     * Shift the gnome to a given step
-     * If the step is occupied, don't move
+     * A gnome is alive if its health > zero
      */
-    fun gotoStep(newStep: Int, allGnomes: List<Gnome>) {
-
+    fun alive(): Boolean {
+        return health > 0
     }
 
     /**
-     * Shift the gnome up the given number of steps
-     * If beyond top (1), stop at top. If step is
-     * occupied, go down until a free step is found
+     * Training increases the gnome's strength,
+     * raising it one level for every two hours
+     * of training (rounding down, so 3hrs adds 1)
+     * Note: max strength is 10
      */
-    fun moveUp(numSteps: Int, allGnomes: List<Gnome>) {
+    fun train(numHours: Int) {
+        println("$name trains for $numHours hours...")
 
+        strength += numHours / 2
+        if (strength > 10) strength = 10
     }
 
     /**
-     * Shift the gnome down the given number of steps
-     * If beyond bottom (10), stop at bottom. If step
-     * is occupied, go up until a free step is found
+     * Fighting another gnome impacts the health
+     * and strength of both gnomes based on these
+     * formula:
+     *   health loss = 5 * opponent strength
+     * Note: min health is zero!
      */
-    fun moveDown(numSteps: Int, allGnomes: List<Gnome>) {
+    fun fight(opponent: Gnome) {
+        println("$name vs ${opponent.name}...")
 
+        val myHealthLoss = if (opponent.alive()) opponent.strength * 5 else 0
+        val opHealthLoss = if (alive()) strength * 5 else 0
+
+        println("$name loses $myHealthLoss health")
+        println("${opponent.name} loses $opHealthLoss health")
+
+        health -= myHealthLoss
+        if (health < 0) health = 0
+        opponent.health -= opHealthLoss
+        if (opponent.health < 0) opponent.health = 0
     }
+
 }
 
